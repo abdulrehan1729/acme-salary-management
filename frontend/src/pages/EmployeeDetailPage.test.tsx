@@ -1,3 +1,5 @@
+import "@testing-library/jest-dom/vitest";
+import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -38,16 +40,25 @@ function renderPage() {
 }
 
 describe("EmployeeDetailPage", () => {
+  let currentEmployee = { ...mockEmployee };
+
   beforeEach(() => {
+    currentEmployee = { ...mockEmployee };
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string, init?: RequestInit) => {
         if (url.includes("/meta")) return { ok: true, json: async () => mockMeta } as Response;
         if (url.includes("/salary-history")) return { ok: true, json: async () => mockHistory } as Response;
         if (init?.method === "PATCH") {
-          return { ok: true, json: async () => ({ ...mockEmployee, baseSalaryAnnual: 105000, baseSalaryAnnualUsd: 105000 }) } as Response;
+          currentEmployee = {
+            ...currentEmployee,
+            baseSalaryAnnual: 105000,
+            baseSalaryAnnualUsd: 105000,
+            updatedAt: new Date().toISOString(),
+          };
+          return { ok: true, json: async () => currentEmployee } as Response;
         }
-        if (url.includes("/employees/emp-1")) return { ok: true, json: async () => mockEmployee } as Response;
+        if (url.includes("/employees/emp-1")) return { ok: true, json: async () => currentEmployee } as Response;
         return { ok: false, json: async () => ({ error: "not found" }) } as Response;
       }),
     );
@@ -62,7 +73,7 @@ describe("EmployeeDetailPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
     });
-    expect(screen.getByText("$95,000")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "$95,000" })).toBeInTheDocument();
   });
 
   it("renders the salary history table", async () => {
@@ -84,7 +95,7 @@ describe("EmployeeDetailPage", () => {
     await user.click(screen.getByRole("button", { name: /save change/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("$105,000")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "$105,000" })).toBeInTheDocument();
     });
   });
 });
