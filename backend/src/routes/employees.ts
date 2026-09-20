@@ -10,6 +10,7 @@ export function employeesRouter(db: Database.Database): Router {
 
   router.get("/", asyncHandler(controller.list));
   router.get("/:id", asyncHandler(controller.getById));
+  router.get("/:id/salary-history", asyncHandler(controller.getSalaryHistory));
   router.post("/", asyncHandler(controller.create));
   router.patch("/:id", asyncHandler(controller.update));
   router.delete("/:id", asyncHandler(controller.deactivate));

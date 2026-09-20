@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import { EmployeeRepository, type EmployeeFilters, type EmployeeRow } from "../repositories/employeeRepository";
+import { SalaryHistoryRepository } from "../repositories/salaryHistoryRepository";
 import { findCountry, DEFAULT_CURRENCY } from "../utils/lookups";
 import type { CreateEmployeeInput, UpdateEmployeeInput } from "../utils/validation";
 
@@ -8,9 +9,11 @@ export class ConflictError extends Error {}
 
 export class EmployeeService {
   private employees: EmployeeRepository;
+  private salaryHistory: SalaryHistoryRepository;
 
   constructor(db: Database.Database) {
     this.employees = new EmployeeRepository(db);
+    this.salaryHistory = new SalaryHistoryRepository(db);
   }
 
   list(filters: EmployeeFilters) {
@@ -30,6 +33,21 @@ export class EmployeeService {
     const row = this.employees.findById(id);
     if (!row) throw new NotFoundError(`Employee ${id} not found`);
     return toDTO(row);
+  }
+
+  getSalaryHistory(id: string) {
+    const employee = this.employees.findById(id);
+    if (!employee) throw new NotFoundError(`Employee ${id} not found`);
+    return this.salaryHistory.findByEmployee(id).map((h) => ({
+      id: h.id,
+      previousSalary: h.previous_salary,
+      newSalary: h.new_salary,
+      currency: h.currency,
+      changeReason: h.change_reason,
+      effectiveDate: h.effective_date,
+      changedBy: h.changed_by,
+      createdAt: h.created_at,
+    }));
   }
 
   create(input: CreateEmployeeInput) {
@@ -57,6 +75,16 @@ export class EmployeeService {
       base_salary_annual_usd: input.baseSalaryAnnual,
     });
 
+    this.salaryHistory.insert({
+      employee_id: row.id,
+      previous_salary: null,
+      new_salary: input.baseSalaryAnnual,
+      currency: DEFAULT_CURRENCY,
+      change_reason: "INITIAL_HIRE",
+      effective_date: input.hireDate,
+      changed_by: input.changedBy,
+    });
+
     return toDTO(row);
   }
 
@@ -69,6 +97,8 @@ export class EmployeeService {
     }
 
     const country = findCountry(input.country ?? existing.country);
+    const salaryChanged =
+      input.baseSalaryAnnual !== undefined && input.baseSalaryAnnual !== existing.base_salary_annual;
     const newSalary = input.baseSalaryAnnual ?? existing.base_salary_annual;
 
     const updated = this.employees.update(id, {
@@ -88,6 +118,18 @@ export class EmployeeService {
       base_salary_annual: newSalary,
       base_salary_annual_usd: newSalary,
     })!;
+
+    if (salaryChanged) {
+      this.salaryHistory.insert({
+        employee_id: id,
+        previous_salary: existing.base_salary_annual,
+        new_salary: newSalary,
+        currency: DEFAULT_CURRENCY,
+        change_reason: input.changeReason ?? "CORRECTION",
+        effective_date: input.effectiveDate ?? new Date().toISOString().slice(0, 10),
+        changed_by: input.changedBy ?? "HR Manager",
+      });
+    }
 
     return toDTO(updated);
   }
