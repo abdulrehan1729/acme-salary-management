@@ -15,10 +15,8 @@ const validPayload = {
     hireDate: "2024-01-15",
     baseSalaryAnnual: 95000,
 };
-
+let app: Express;
 describe("Employees API", () => {
-    let app: Express;
-
     beforeEach(() => {
         app = createApp(createTestDb());
     });
@@ -107,11 +105,8 @@ describe("Employees API", () => {
 });
 
 describe("Analytics API", () => {
-    let app: Express;
-
     beforeEach(async () => {
-        app = createApp(createTestDb());
-
+            app = createApp(createTestDb());
         await request(app)
             .post("/api/employees")
             .send({ ...validPayload, email: "a@acme.com", baseSalaryAnnual: 100000 });
@@ -138,5 +133,23 @@ describe("Analytics API", () => {
         const byLevel = await request(app).get("/api/analytics/by-level");
         expect(byCountry.status).toBe(200);
         expect(byLevel.status).toBe(200);
+    });
+});
+
+describe("Meta API", () => {
+      beforeEach(() => {
+        app = createApp(createTestDb());
+    });
+    it("GET /api/meta returns lookup data for frontend dropdowns", async () => {
+        const res = await request(app).get("/api/meta");
+        expect(res.status).toBe(200);
+        expect(res.body.departments).toContain("Engineering");
+        expect(res.body.levels).toContain("L4");
+        expect(res.body.countries).toEqual(
+            expect.arrayContaining([expect.objectContaining({ code: "US", name: "United States" })]),
+        );
+        expect(res.body.employmentTypes).toContain("FULL_TIME");
+        expect(res.body.statuses).toContain("ACTIVE");
+        expect(res.body.changeReasons).toContain("MERIT_INCREASE");
     });
 });
