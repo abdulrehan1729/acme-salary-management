@@ -74,4 +74,20 @@ describe("Employees API", () => {
     expect(res.body.pagination.total).toBe(1);
     expect(res.body.data[0].lastName).toBe("50%Off");
   });
+  it("GET /api/employees/:id/salary-history returns the audit trail", async () => {
+  const created = await request(app).post("/api/employees").send(validPayload);
+  await request(app)
+    .patch(`/api/employees/${created.body.id}`)
+    .send({ baseSalaryAnnual: 105000, changeReason: "PROMOTION" });
+
+  const res = await request(app).get(`/api/employees/${created.body.id}/salary-history`);
+  expect(res.status).toBe(200);
+  expect(res.body).toHaveLength(2);
+  expect(res.body[0].changeReason).toBe("PROMOTION");
+});
+
+it("GET /api/employees/:id/salary-history returns 404 for an unknown employee", async () => {
+  const res = await request(app).get("/api/employees/does-not-exist/salary-history");
+  expect(res.status).toBe(404);
+});
 });
