@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { createTestDb } from "./testDb";
-import { EmployeeRepository } from "../db/employeeRepository";
+import { EmployeeRepository } from "../repositories/employeeRepository";
 
 function sampleEmployee(overrides: Partial<Parameters<EmployeeRepository["insert"]>[0]> = {}) {
     return {
