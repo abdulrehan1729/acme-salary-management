@@ -83,3 +83,9 @@ weighted pick, so exact per-row results vary slightly run to run.
 - Add optimistic-concurrency handling on employee updates (compare `updatedAt`) — currently
   last-write-wins, acceptable given the single-HR-Manager scope in `requirements.md`.
 - Real per-country currency conversion, if the single-currency assumption turns out wrong.
+
+## Meta endpoint — one source of truth for lookup data
+`GET /api/meta` returns the same `DEPARTMENTS`/`LEVELS`/`COUNTRIES`/etc. constants the
+backend validates create/update requests against (`src/utils/lookups.ts`). The frontend's
+dropdowns are populated from this endpoint rather than a hardcoded duplicate list, so the
+two can't drift out of sync — a value the UI offers is guaranteed to be one the API accepts.

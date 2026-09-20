@@ -65,6 +65,7 @@ one below it; business rules live in services, SQL lives only in repositories.
 | DELETE | `/api/employees/:id` | Soft delete (sets `status: INACTIVE`) |
 | GET | `/api/analytics/summary` | Headcount, total/avg/median payroll (active employees only) |
 | GET | `/api/analytics/by-department` \| `by-country` \| `by-level` | Grouped breakdowns |
+| GET | `/api/meta` | Lookup data for dropdowns — departments, levels, countries, employment types, statuses, salary-change reasons |
 
 See `docs/architecture.md` for the reasoning behind key decisions (single-currency model,
 soft delete, the audit-trail rule, index choices).
