@@ -7,6 +7,9 @@ Node.js + TypeScript + Express API on SQLite (`better-sqlite3`).
 ```bash
 npm install
 ```
+> If you see a `NODE_MODULE_VERSION` mismatch error when running tests (usually after
+> switching Node versions), `better-sqlite3`'s native binary needs rebuilding:
+> `rm -rf node_modules package-lock.json && npm install`
 
 Copy the env example and adjust if needed (defaults work out of the box):
 
