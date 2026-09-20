@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { DEPARTMENTS, LEVELS, EMPLOYMENT_TYPES, EMPLOYEE_STATUSES, COUNTRIES } from "./lookups";
+import { DEPARTMENTS, LEVELS, EMPLOYMENT_TYPES, EMPLOYEE_STATUSES, SALARY_CHANGE_REASONS, COUNTRIES } from "./lookups";
 
 const countryCodes = COUNTRIES.map((c) => c.code) as [string, ...string[]];
+const nonInitialReasons = SALARY_CHANGE_REASONS.filter((r) => r !== "INITIAL_HIRE") as [string, ...string[]];
 
 export const createEmployeeSchema = z.object({
   firstName: z.string().min(1).max(100),
@@ -16,9 +17,13 @@ export const createEmployeeSchema = z.object({
   managerId: z.string().nullable().optional(),
   hireDate: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Invalid date"),
   baseSalaryAnnual: z.number().positive(),
+  changedBy: z.string().min(1).max(100).default("HR Manager"),
 });
 
-export const updateEmployeeSchema = createEmployeeSchema.partial();
+export const updateEmployeeSchema = createEmployeeSchema.partial().extend({
+  changeReason: z.enum(nonInitialReasons).optional(),
+  effectiveDate: z.string().optional(),
+});
 
 export const employeeQuerySchema = z.object({
   q: z.string().optional(),
