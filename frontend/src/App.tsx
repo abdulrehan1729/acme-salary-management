@@ -14,6 +14,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import EmployeeListPage from "./pages/EmployeeListPage";
+import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 const theme = createTheme({
     palette: {
         mode: "light",
@@ -71,7 +72,7 @@ function AppShell() {
                 <Routes>
                     <Route path="/" element={<EmployeeListPage />} />{" "}
                     <Route path="/employees/new" element={<div>New employee form — coming later</div>} />
-                    <Route path="/employees/:id" element={<div>Employee detail — coming later</div>} />
+                    <Route path="/employees/:id" element={<EmployeeDetailPage />} />
                     <Route path="/analytics" element={<div>Analytics — coming later</div>} />
                 </Routes>
             </Container>
