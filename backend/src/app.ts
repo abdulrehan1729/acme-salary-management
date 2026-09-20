@@ -2,6 +2,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import type Database from "better-sqlite3";
 import { employeesRouter } from "./routes/employees";
+import { analyticsRouter } from "./routes/analytics";
 import { errorHandler } from "./middleware/errorHandler";
 
 export function createApp(db: Database.Database): Express {
@@ -11,6 +12,7 @@ export function createApp(db: Database.Database): Express {
 
   app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
   app.use("/api/employees", employeesRouter(db));
+  app.use("/api/analytics", analyticsRouter(db));
 
   app.use(errorHandler);
   return app;

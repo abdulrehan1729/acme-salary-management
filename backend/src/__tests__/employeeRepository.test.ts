@@ -182,4 +182,19 @@ describe("EmployeeRepository", () => {
             expect(rows[0].last_name).toBe("Smith_Jones");
         });
     });
+
+    describe("findAllActive", () => {
+  it("returns only ACTIVE employees", () => {
+    repo.insert(sampleEmployee({ employee_code: "EMP-000001", email: "a@acme.com", status: "ACTIVE" }));
+    repo.insert(sampleEmployee({ employee_code: "EMP-000002", email: "b@acme.com", status: "INACTIVE" }));
+    const active = repo.findAllActive();
+    expect(active).toHaveLength(1);
+    expect(active[0].email).toBe("a@acme.com");
+  });
+
+  it("returns an empty array when there are no active employees", () => {
+    repo.insert(sampleEmployee({ employee_code: "EMP-000001", email: "a@acme.com", status: "INACTIVE" }));
+    expect(repo.findAllActive()).toEqual([]);
+  });
+});
 });
