@@ -16,6 +16,7 @@ import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from "re
 import EmployeeListPage from "./pages/EmployeeListPage";
 import EmployeeDetailPage from "./pages/EmployeeDetailPage";
 import NewEmployeePage from "./pages/NewEmployeePage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 const theme = createTheme({
     palette: {
@@ -75,7 +76,7 @@ function AppShell() {
                     <Route path="/" element={<EmployeeListPage />} />{" "}
                     <Route path="/employees/new" element={<NewEmployeePage />} />
                     <Route path="/employees/:id" element={<EmployeeDetailPage />} />
-                    <Route path="/analytics" element={<div>Analytics — coming later</div>} />
+                    <Route path="/analytics" element={<AnalyticsPage />} />
                 </Routes>
             </Container>
         </Box>
