@@ -2,15 +2,13 @@
  * Seeds the database with 10,000 employees across every department/level/country,
  * with a manager hierarchy and one INITIAL_HIRE salary-history record each.
  *
- * Deterministic where it matters: faker is seeded, so names/dates/salary-band rolls
- * repeat on re-run — useful for reproducible demos. weightedPick uses plain Math.random
- * (not faker's seeded RNG), so department/level/country *distribution* is stable in
- * aggregate but individual assignments vary slightly run to run — fine for seed data.
- *
- * Run: npm run seed
+ * seedDatabase(db) does the actual work and is safe to call from application code
+ * (e.g. on server boot via seedIfEmpty). The CLI entry point at the bottom preserves
+ * `npm run seed` for local force-reseeding.
  */
 import { faker } from "@faker-js/faker";
 import { randomUUID } from "node:crypto";
+import type Database from "better-sqlite3";
 import { getDb } from "./connection";
 import { runMigrations } from "./migrate";
 import { DEPARTMENTS, LEVELS, COUNTRIES, DEFAULT_CURRENCY } from "../utils/lookups";
@@ -52,11 +50,10 @@ type PlannedEmployee = {
   country: string;
 };
 
-async function main() {
+/** Seeds `db` with 10,000 employees. Always clears existing data first — callers decide
+ *  when it's safe to call this (see seedIfEmpty below for the guarded wrapper). */
+export async function seedDatabase(db: Database.Database): Promise<void> {
   faker.seed(SEED);
-
-  const db = getDb();
-  runMigrations(db);
 
   console.log("Clearing existing data...");
   db.exec("DELETE FROM salary_history; DELETE FROM employees;");
@@ -81,7 +78,7 @@ async function main() {
 
   // Pass 1: decide dept/level/country for everyone up front, so we can wire a manager
   // hierarchy (an L(n) employee reports to an L(n+1) in the same dept/country when one
-  // exists, otherwise has no manager — i.e. is effectively a dept head for that country).
+  // exists, otherwise has no manager).
   const planned: PlannedEmployee[] = [];
   for (let i = 0; i < TOTAL_EMPLOYEES; i++) {
     planned.push({
@@ -102,8 +99,6 @@ async function main() {
   }
 
   const insertMany = db.transaction((rows: PlannedEmployee[]) => {
-    // Managers can be inserted after the employees who reference them (insert order
-    // follows `rows`, not the hierarchy) — defer FK checks to commit time.
     db.pragma("defer_foreign_keys = ON");
     const usedEmails = new Set<string>();
 
@@ -153,7 +148,7 @@ async function main() {
         manager_id: managerId,
         hire_date: hireDate,
         base_salary_annual: salary,
-        base_salary_annual_usd: salary, // single-currency v1: identity, not a conversion
+        base_salary_annual_usd: salary,
       });
 
       insertHistory.run({
@@ -174,7 +169,24 @@ async function main() {
   console.log(`Done. ${count} employees seeded.`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+/** Safe for automatic use on server boot: only seeds if the table is currently empty,
+ *  so it never wipes real data on a restart/redeploy. */
+export async function seedIfEmpty(db: Database.Database): Promise<void> {
+  const { c } = db.prepare("SELECT COUNT(*) AS c FROM employees").get() as { c: number };
+  if (c > 0) {
+    console.log(`Database already has ${c} employees — skipping seed.`);
+    return;
+  }
+  console.log("Database is empty — seeding...");
+  await seedDatabase(db);
+}
+
+// CLI entry point — `npm run seed` force-reseeds regardless of current row count.
+if (require.main === module) {
+  const db = getDb();
+  runMigrations(db);
+  seedDatabase(db).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
