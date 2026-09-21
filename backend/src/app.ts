@@ -8,8 +8,11 @@ import { errorHandler } from "./middleware/errorHandler";
 
 export function createApp(db: Database.Database): Express {
   const app = express();
-  app.use(cors());
+  const allowedOrigin = process.env.FRONTEND_URL; // e.g. https://acme-salary.vercel.app
+  app.use(cors({ origin: allowedOrigin ?? true })); // true = allow all, for local dev when unset
+
   app.use(express.json());
+
 
   app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
   app.use("/api/employees", employeesRouter(db));
