@@ -8,7 +8,7 @@ multiple countries — safely, quickly, and without manual Excel formulas.
 Two jobs the product must do well:
 1. **System of record** — create/update employee compensation data with an auditable trail.
 2. **System of answers** — let the HR Manager answer questions like "what's our average
-   engineering salary in Germany?" or "who got a raise last quarter?" without exporting to Excel.
+   engineering salary?" or "who got a raise last quarter?" without exporting to Excel.
 
 ## Primary User & Core Jobs-to-be-Done
 HR Manager, non-technical, comfortable with spreadsheets, needs to:
@@ -22,12 +22,17 @@ HR Manager, non-technical, comfortable with spreadsheets, needs to:
 - **Employee profile**: personal + employment details, current salary, full salary change history.
 - **Salary editing**: every salary change is captured as an immutable history record
   (previous amount, new amount, reason, effective date) — never a silent overwrite.
-- **Compensation analytics dashboard**: headcount & total payroll (normalized to USD),
-  average/median salary by department, by country, and by level — the direct answer to
-  "how do we pay people."
-- **CSV export** of the current employee/salary table, for the one-off ad hoc analysis HR
-  still wants to do in Excel.
-- **Seed data**: realistic 10,000-employee dataset across ~8 countries, 9 departments, 6 levels.
+- **Compensation analytics dashboard**: headcount & total payroll, average/median salary by
+  department, by country, and by level — the direct answer to "how do we pay people."
+- **Seed data**: realistic 10,000-employee dataset across 8 countries, 10 departments, 6 levels.
+
+## Assumption: single currency (v1)
+The brief says employees span "multiple countries," not "multiple currencies." Real
+per-country pay would require live or versioned FX rates — a distinct, harder problem than
+salary management itself. v1 pays every employee in a single currency (USD). The schema
+still carries a `currency` column and a separate USD-normalized salary column so real
+per-country currency handling could be added later without a migration, but no FX
+conversion exists yet — it's a documented extension point, not a built feature.
 
 ## Deliberately Out of Scope (v1) — and why
 - **Multi-user auth / roles (RBAC), SSO** — the brief specifies a single persona (HR Manager).
@@ -46,14 +51,13 @@ HR Manager, non-technical, comfortable with spreadsheets, needs to:
   Sensitive attributes (e.g. gender/ethnicity pay-gap analysis) are intentionally not modeled
   or reported on — that requires legal/compliance review before building, not an engineering call.
 - **Real-time collaboration / multi-tab conflict resolution** — one HR Manager at a time is a
-  reasonable v1 assumption at this org size; optimistic concurrency (updatedAt check) is
-  enough of a guardrail for now.
-- **Internationalization (i18n) of the UI** — the HR Manager persona is a single user; currency
-  *values* are still handled correctly (each employee keeps native currency + a normalized USD
-  figure for cross-country comparison), only UI copy stays English-only.
-- **Bulk CSV import / org-chart editing UI** — export is in scope (HR needs data out); import
-  and manager-hierarchy editing are natural extensions once the core model is validated, but
-  doubled the surface area of this exercise without changing the core engineering story.
+  reasonable v1 assumption at this org size; optimistic concurrency (an `updatedAt` check) is
+  a natural v2 guardrail, not built here.
+- **Internationalization (i18n) of the UI** — the HR Manager persona is a single user, so UI
+  copy stays English-only.
+- **CSV export/import, bulk editing, org-chart editing UI** — considered during planning but
+  cut to keep the build focused on the core record-keeping and analytics story; export in
+  particular is a natural, low-risk v2 addition on top of the existing list endpoint.
 
 ## Non-functional targets
 - Directory search/filter/pagination stays responsive at 10,000 rows (server-side pagination
